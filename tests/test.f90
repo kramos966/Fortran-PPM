@@ -6,9 +6,10 @@ program test
     character(len=*), parameter :: f_grays = "test.ppm"
     integer, pointer :: im_ptr(:, :, :) => null()
     integer, pointer :: imc_ptr(:, :, :) => null()
+    integer, pointer :: nim_ptr(:, :, :) => null()
     integer :: ny, nx, nc, mv1
     integer :: my, mx, mc, mv2
-    integer :: err
+    integer :: err, i, j
 
     ! Reading test
     err = ppmload(f_grays, im_ptr, nc, ny, nx, mv1)
@@ -31,7 +32,13 @@ program test
     write(*, fmt="(A, 20I3)") "Vint primers valors:", imc_ptr(1, 1:20, 1)
 
     ! Writing test
-    err = ppmwrite("write.ppm", imc_ptr, mc, my, mx, mv2)
+    allocate(nim_ptr(1, 256, 256))
+    do concurrent (i = 1:256)
+        do j = 1, 256
+            nim_ptr(1, j, i) = ieor(j-1, i-1)
+        end do
+    end do
+    err = ppmwrite("write.ppm", nim_ptr, 1, 256, 256, 255)
     write(*, *) err
 
 end program test

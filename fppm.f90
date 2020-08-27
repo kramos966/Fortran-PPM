@@ -44,16 +44,15 @@ module fppm
             open(10, file=filename, access="stream", action="read")
             read(10, iostat=stat) header
             ! Check if file is ppm
-            if (header .eq. "P5") then
-                nc = 1 ! Grayscale
-            else
-                if (header .eq. "P6") then
-                    nc = 3 ! Color
-                else
-                    return ! Not a ppm
-                end if
-            end if
-
+            select case (header)
+                case ("P5")
+                    nc = 1
+                case ("P6")
+                    nc = 3
+                case default
+                    err = error 
+                    return
+            end select
 
             ! Read image width
             ! FIXME: TERRIBLE HACK INCOMING
@@ -164,13 +163,15 @@ module fppm
             integer           :: i, j, k
 
             ! Construction of the header of the ppm
-            if (nc .eq. 1) magic = "P5"
-            if (nc .eq. 3) then
-                magic = "P6"
-            else
-                err = error
-                return
-            end if
+            select case (nc)
+                case (1)
+                    magic = "P5"
+                case (3)
+                    magic = "P6"
+                case default
+                    err = error ! Exit with error
+                    return
+            end select 
             ! Width and height, terrible hacks included!
             write(width, fmt="(I10)") nx
             width = adjustl(width)
