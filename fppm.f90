@@ -1,37 +1,47 @@
 module fppm
     !use, intrinsic :: iso_c_binding, only: c_int8_t
     implicit none
+    private
 
+    character, parameter :: tab = char(9)
+    character, parameter :: lf = char(10)
+    character, parameter :: nl = char(12)
+    character, parameter :: cr = char(13)
+    character, parameter :: sp = char(32)
+    integer, parameter   :: success = 0
+    integer, parameter   :: error = -1
+
+    public :: ppmload
+    public :: ppmwrite
     contains
-        subroutine ppmload(filename, im_ptr, nc, ny, nx)
+        function ppmload(filename, im_ptr, nc, ny, nx, mxvl) result(err)
+            ! Reads a ppm file and allocates im_ptr to store it
+            ! in memory. Returns the number of color channels, 
+            ! the height ny, the width nx and the maximum value
+            ! of the image mxvl.
             character(len=*), intent(in)    :: filename
             integer, pointer, intent(inout) :: im_ptr(:, :, :)
             integer, intent(out)            :: nc
             integer, intent(out)            :: ny
             integer, intent(out)            :: nx
-
-            character, parameter :: tab = char(9)
-            character, parameter :: lf = char(10)
-            character, parameter :: nl = char(12)
-            character, parameter :: cr = char(13)
-            character, parameter :: sp = char(32)
+            integer, intent(out)            :: mxvl
+            integer                         :: err
 
             character                :: byte
             character(len=2)         :: header
-            integer                  :: exists, stat, i, j, k, mxvl
+            integer                  :: stat, i, j, k
             integer(kind=1), pointer :: temp_ptr(:, :, :) => null() 
             character(len=6)         :: dims = "      "
 
             ! Checking existance of file
-            exists = access(filename, "r")
-            if (exists .ne. 0) then
-                im_ptr => null() ! En cas que no existeixi
-                return
+            if (access(filename, "r") .ne. 0) then
+                err = error
+                return 
             end if
 
             ! Reading file
             stat = 0 ! I/O status
-            open(10, file=filename, access="stream")
+            open(10, file=filename, access="stream", action="read")
             read(10, iostat=stat) header
             ! Check if file is ppm
             if (header .eq. "P5") then
@@ -100,8 +110,8 @@ module fppm
             do j = 1, ny
                 do i = 1, nx
                     do k = 1, nc
-                        read(10) byte
-                        temp_ptr(k, j, i) = int(ichar(byte), kind=1)
+                        !read(10) byte
+                        read(10) temp_ptr(k, j, i)
                     end do
                end do
             end do
@@ -128,20 +138,62 @@ module fppm
                 end do
 
             end if
-            !im_ptr = reshape(transfer(temp_ptr, 1, size=nc*nx*ny), &
-            !                 shape=[nc, ny, nx])
 
-            ! Netejo
+            ! Cleanup
             deallocate(temp_ptr)
-
+            close(10)
+            err = success
             return
-        end subroutine ppmload
+        end function ppmload
 
-        subroutine ppm_write(file_name, im_ptr, nc, ny, nx)
-            character(len=*), intent(in)    :: file_name
+        function ppmwrite(filename, im_ptr, nc, ny, nx, mxvl) result(err)
+            ! Saves a 4byte integer array into a ppm file.
+            character(len=*), intent(in)    :: filename
             integer, pointer, intent(in)    :: im_ptr(:, :, :)
             integer, intent(in)             :: nc
             integer, intent(in)             :: ny
             integer, intent(in)             :: nx
-        end subroutine ppm_write
+            integer, intent(in)             :: mxvl
+            integer                         :: err
+
+            character(len=50) :: header
+            character(len=2)  :: magic
+            character(len=10) :: width
+            character(len=10) :: height
+            character(len=6)  :: max_val
+            integer           :: i, j, k
+
+            ! Construction of the header of the ppm
+            if (nc .eq. 1) magic = "P5"
+            if (nc .eq. 3) then
+                magic = "P6"
+            else
+                err = error
+                return
+            end if
+            ! Width and height, terrible hacks included!
+            write(width, fmt="(I10)") nx
+            width = adjustl(width)
+            write(height, fmt="(I10)") ny
+            height = adjustl(height)
+            write(max_val, fmt="(I6)") mxvl
+            max_val = adjustl(max_val)
+
+            header = trim(magic)//nl//trim(width)//sp//trim(height)//&
+                nl//trim(max_val)//nl
+
+            open(10, file=filename, access="stream", action="write")
+            write(10) trim(header)
+            do concurrent (i = 1:nx)
+                do j = 1, ny
+                    do k = 1, nc
+                        write(10) int(im_ptr(k, j, i), kind=1)
+                    end do
+                end do
+            end do
+            close(10)
+
+            err = success
+            return
+        end function ppmwrite
 end module fppm

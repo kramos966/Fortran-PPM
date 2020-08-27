@@ -1,5 +1,5 @@
 FC = gfortran
-FFLAGS = -Wall -Wpedantic -O2 -ftree-parallelize-loops=4
+FFLAGS = -Wall -Wpedantic -O2 -ftree-parallelize-loops=4 -march=native
 SRC = fppm.f90
 LIB = fppm.o
 EXSRC = tests/test.f90
