@@ -184,8 +184,8 @@ module fppm
 
             open(10, file=filename, access="stream", action="write")
             write(10) trim(header)
-            do concurrent (i = 1:nx)
-                do j = 1, ny
+            do concurrent (j = 1:ny)
+                do i = 1, nx
                     do k = 1, nc
                         write(10) int(im_ptr(k, j, i), kind=1)
                     end do
