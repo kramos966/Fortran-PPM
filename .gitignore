@@ -1,3 +1,6 @@
+# Objects and mods
 *.o
 *.mod
+
+# Tests
 test
