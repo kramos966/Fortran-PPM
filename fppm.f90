@@ -14,13 +14,13 @@ module fppm
     public :: ppmload
     public :: ppmwrite
     contains
-        function ppmload(filename, im_ptr, nc, ny, nx, mxvl) result(err)
-            ! Reads a ppm file and allocates im_ptr to store it
+        function ppmload(filename, im_arr, nc, ny, nx, mxvl) result(err)
+            ! Reads a ppm file and allocates im_arr to store it
             ! in memory. Returns the number of color channels, 
             ! the height ny, the width nx and the maximum value
             ! of the image mxvl.
             character(len=*), intent(in)    :: filename
-            integer, pointer, intent(inout) :: im_ptr(:, :, :)
+            integer, allocatable, intent(inout) :: im_arr(:, :, :)
             integer, intent(out)            :: nc
             integer, intent(out)            :: ny
             integer, intent(out)            :: nx
@@ -30,7 +30,7 @@ module fppm
             character                :: byte
             character(len=2)         :: header
             integer                  :: stat, i, j, k
-            integer(kind=1), pointer :: temp_ptr(:, :, :) => null() 
+            integer(kind=1), allocatable :: temp_arr(:, :, :)
             character(len=6)         :: dims = "      "
 
             ! Checking existance of file
@@ -101,16 +101,16 @@ module fppm
 
             ! Llegeix cada fila de dades, l'espai ja ha estat llegit
             if (mxvl .gt. 255) then
-                allocate(temp_ptr(2*nc, ny, nx)) ! Cada pixel son dos bytes
+                allocate(temp_arr(2*nc, ny, nx)) ! Cada pixel son dos bytes
             else
-                allocate(temp_ptr(nc, ny, nx))   ! Cada pixel es un byte
+                allocate(temp_arr(nc, ny, nx))   ! Cada pixel es un byte
             end if
-            allocate(im_ptr(nc, ny, nx))    ! Creo espai per l'arr final
+            allocate(im_arr(nc, ny, nx))    ! Creo espai per l'arr final
             do j = 1, ny
                 do i = 1, nx
                     do k = 1, nc
                         !read(10) byte
-                        read(10) temp_ptr(k, j, i)
+                        read(10) temp_arr(k, j, i)
                     end do
                end do
             end do
@@ -120,7 +120,7 @@ module fppm
                 do concurrent (i = 1:nx)
                     do j = 1, ny
                         do k = 1, nc
-                            im_ptr(k, j, i) = transfer(temp_ptr(k, j, i), &
+                            im_arr(k, j, i) = transfer(temp_arr(k, j, i), &
                                                        int(1, kind=4))
                         end do
                     end do
@@ -129,8 +129,8 @@ module fppm
                 do concurrent (i = 1:nx)
                     do j = 1, ny
                         do k = 1, nc
-                            im_ptr(k, j, i) = &
-                                transfer(temp_ptr(2*k-1:2*k, j, i), &
+                            im_arr(k, j, i) = &
+                                transfer(temp_arr(2*k-1:2*k, j, i), &
                                                        int(1, kind=4))
                         end do
                     end do
@@ -139,16 +139,16 @@ module fppm
             end if
 
             ! Cleanup
-            deallocate(temp_ptr)
+            deallocate(temp_arr)
             close(10)
             err = success
             return
         end function ppmload
 
-        function ppmwrite(filename, im_ptr, nc, ny, nx, mxvl) result(err)
+        function ppmwrite(filename, im_arr, nc, ny, nx, mxvl) result(err)
             ! Saves a 4byte integer array into a ppm file.
             character(len=*), intent(in)    :: filename
-            integer, pointer, intent(in)    :: im_ptr(:, :, :)
+            integer,  intent(in)    :: im_arr(:, :, :)
             integer, intent(in)             :: nc
             integer, intent(in)             :: ny
             integer, intent(in)             :: nx
@@ -188,7 +188,7 @@ module fppm
             do concurrent (j = 1:ny)
                 do i = 1, nx
                     do k = 1, nc
-                        write(10) int(im_ptr(k, j, i), kind=1)
+                        write(10) int(im_arr(k, j, i), kind=1)
                     end do
                 end do
             end do
