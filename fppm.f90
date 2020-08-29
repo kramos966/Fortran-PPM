@@ -19,19 +19,19 @@ module fppm
             ! in memory. Returns the number of color channels, 
             ! the height ny, the width nx and the maximum value
             ! of the image mxvl.
-            character(len=*), intent(in)    :: filename
+            character(len=*), intent(in)        :: filename
             integer, allocatable, intent(inout) :: im_arr(:, :, :)
-            integer, intent(out)            :: nc
-            integer, intent(out)            :: ny
-            integer, intent(out)            :: nx
-            integer, intent(out)            :: mxvl
-            integer                         :: err
+            integer, intent(out)                :: nc
+            integer, intent(out)                :: ny
+            integer, intent(out)                :: nx
+            integer, intent(out)                :: mxvl
+            integer                             :: err
 
-            character                :: byte
-            character(len=2)         :: header
-            integer                  :: stat, i, j, k
+            character                    :: byte
+            character(len=2)             :: header
+            integer                      :: stat, i, j, k
             integer(kind=1), allocatable :: temp_arr(:, :, :)
-            character(len=6)         :: dims = "      "
+            character(len=6)             :: dims = "      "
 
             ! Checking existance of file
             if (access(filename, "r") .ne. 0) then
@@ -148,7 +148,7 @@ module fppm
         function ppmwrite(filename, im_arr, nc, ny, nx, mxvl) result(err)
             ! Saves a 4byte integer array into a ppm file.
             character(len=*), intent(in)    :: filename
-            integer,  intent(in)    :: im_arr(:, :, :)
+            integer, intent(in)             :: im_arr(:, :, :)
             integer, intent(in)             :: nc
             integer, intent(in)             :: ny
             integer, intent(in)             :: nx

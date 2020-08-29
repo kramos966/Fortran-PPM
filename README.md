@@ -8,7 +8,7 @@ The library consists of two functions, `ppmload` and `ppmwrite`.
 They both require the same number and kinds of arguments in the 
 same order: 
 - `filename`, a file name to open/read a ppm image file
-- `im_ptr`, a rank-3 pointer to the image data with the shape `(nc, ny, nx)`
+- `im_arr`, a rank-3 allocatable array to the image data with the shape `(nc, ny, nx)`
 - `nc` number of color channels
 - `ny` height of the image 
 - `nx` width of the image
